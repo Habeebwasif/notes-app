@@ -1,7 +1,7 @@
 # Use Nginx to serve the static frontend.
 FROM nginx:alpine
 
-# Copy the reverse-proxy configuration.
+# Copying the reverse-proxy configuration.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy the frontend page.
