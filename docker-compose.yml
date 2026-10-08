@@ -4,6 +4,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     image: notes-frontend:local
+    pull_policy: build
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-8080}:80"
@@ -21,13 +22,14 @@ services:
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     image: notes-api:local
+    pull_policy: build
     restart: unless-stopped
     init: true
-    ports:
-      - "${API_PORT:-4000}:4000"
+    expose:
+      - "4000"
     env_file:
       - .env
     environment:
