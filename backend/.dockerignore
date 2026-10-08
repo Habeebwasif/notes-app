@@ -1,0 +1,16 @@
+node_modules/
+.npm/
+
+.env
+.env.*
+
+.git/
+.gitignore
+
+*.log
+npm-debug.log*
+
+coverage/
+dist/
+build/
+
