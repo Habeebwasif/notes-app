@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes</title>
+<style>
+:root{--bg:#eef2f4;--ink:#14232b;--muted:#5d7079;--line:#c9d4d9;--accent:#0a6c8f;--card:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,serif;padding:3rem 1rem}
+main{max-width:560px;margin:0 auto}
+h1{font-size:2.2rem;margin:0 0 1.5rem}
+form{display:flex;gap:.5rem;margin-bottom:1.5rem}
+input{flex:1;padding:.7rem .9rem;border:1px solid var(--line);border-radius:4px;font:inherit}
+button{font:inherit;cursor:pointer}
+.add{padding:.7rem 1.1rem;border:0;border-radius:4px;background:var(--accent);color:#fff}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:.75rem;padding:.8rem 1rem;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--accent);margin-bottom:.5rem}
+li.done span{text-decoration:line-through;color:var(--muted)}
+li span{flex:1;word-break:break-word;cursor:pointer}
+.del{border:0;background:none;color:var(--muted);font-size:1.1rem}
+#msg,#status{color:var(--muted);text-align:center;font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>Notes</h1>
+  <form id="f">
+    <input id="t" maxlength="280" placeholder="Write a note" aria-label="New note" required>
+    <button class="add" type="submit">Add note</button>
+  </form>
+  <ul id="list"></ul>
+  <p id="msg"></p>
+  <p id="status">Checking API…</p>
+</main>
+<script>
+// The browser calls the API, so this must be an address your BROWSER can reach
+const API = "http://52.53.170.30:4000";
+const $ = id => document.getElementById(id);
+
+async function api(path, opts) {
+  const r = await fetch(API + path, { headers: {"Content-Type":"application/json"}, ...opts });
+  if (!r.ok && r.status !== 204) throw new Error((await r.json()).error || "Request failed");
+  return r.status === 204 ? null : r.json();
+}
+
+async function load() {
+  const notes = await api("/api/notes");
+  $("list").innerHTML = "";
+  $("msg").textContent = notes.length ? "" : "No notes yet. Add your first one above.";
+  notes.forEach(n => {
+    const li = document.createElement("li"); if (n.done) li.className = "done";
+    const s = document.createElement("span"); s.textContent = n.text;
+    s.onclick = async () => { await api("/api/notes/" + n.id, {method:"PATCH"}); load(); };
+    const d = document.createElement("button"); d.className = "del"; d.textContent = "✕";
+    d.setAttribute("aria-label", "Delete note");
+    d.onclick = async () => { await api("/api/notes/" + n.id, {method:"DELETE"}); load(); };
+    li.append(s, d); $("list").append(li);
+  });
+}
+
+$("f").onsubmit = async e => {
+  e.preventDefault();
+  try { await api("/api/notes", {method:"POST", body: JSON.stringify({text: $("t").value})}); $("t").value = ""; load(); }
+  catch (err) { $("msg").textContent = err.message; }
+};
+
+api("/health").then(h => $("status").textContent = "API OK, database " + h.db)
+  .catch(() => $("status").textContent = "API unreachable");
+load().catch(() => $("msg").textContent = "Could not load notes.");
+</script>
+</body>
+</html>
+
